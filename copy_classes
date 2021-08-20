@@ -1,0 +1,2 @@
+rm -rf ~/.local/share/SuperCollider/Extensions/SuperPattern/Classes/*
+cp Classes/*.sc ~/.local/share/SuperCollider/Extensions/SuperPattern/Classes/
