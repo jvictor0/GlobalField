@@ -85,7 +85,7 @@ class Event:
         return self.note.energy * ctx.LogOrdEnergy(self.position.offset_denomonator)
 
     def __str__(self):
-        return "Event(%s, %s)" % (self.note, self.position)
+        return "Event\n(\n    %s,\n    %s\n)" % (self.note, self.position)
     
     def __repr__(self):
         return "event.Event(%s, %s)" % (repr(self.note), repr(self.position))

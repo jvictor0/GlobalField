@@ -7,7 +7,15 @@ def GCD(x, y):
         y = x_mod_y
     return x
 
+def StrIndent(obj):
+    return str(obj).replace("\n", "\n    ")
+
 def StrList(lst):
+    result = "[\n    " + ",\n    ".join(map(StrIndent, lst)) + "\n]"
+    result = result.replace("\n","\n    ")
+    return result
+
+def StrShortList(lst):
     return "[" + ",".join(map(str, lst)) + "]"
 
 def ReprList(lst):

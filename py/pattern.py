@@ -50,7 +50,10 @@ class Beat:
         self.events = new_events
 
     def __str__(self):
-        return "Beat(%d, %d, %s)" % (self.beat, self.denomonator, util.StrList(self.events))
+        if len(self.events) == 0:
+            return "Beat(%d, %d, [])" % (self.beat, self.denomonator)
+        else:
+            return "Beat\n(\n    %d, %d, \n    %s\n)" % (self.beat, self.denomonator, util.StrList(self.events))
 
     def __repr__(self):
         return "pattern.Beat(%d, %d, %s)" % (self.beat, self.denomonator, util.ReprList(self.events))
@@ -111,7 +114,7 @@ class Pattern:
         self.stats.Validate(self)
 
     def __str__(self):
-        return "Pattern(%s)" % (util.StrList(self.beats))
+        return "Pattern\n(\n    %s\n)" % (util.StrList(self.beats))
 
     def __repr__(self):
         return "pattern.Pattern(%s)" % (util.ReprList(self.beats))

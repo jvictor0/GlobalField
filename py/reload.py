@@ -4,6 +4,7 @@ import pattern
 import instrument
 import context
 import mutation
+import sc
 
 import sys
 
@@ -14,4 +15,5 @@ def Reload():
     reload(instrument)
     reload(context)
     reload(mutation)
+    reload(sc)
     return reload(sys.modules[__name__])

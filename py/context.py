@@ -2,6 +2,7 @@ import util
 import math
 import mutation
 import instrument
+import sc
 
 class PrimeOrdEnergy:
     def __init__(self, prime, base):
@@ -35,8 +36,9 @@ x_default_ord_energy = OrdEnergy([
     PrimeOrdEnergy(11, 1024.0)])
 
 class Context:
-    def __init__(self, ord_energy=x_default_ord_energy):
+    def __init__(self, ord_energy=x_default_ord_energy, sc_host='127.0.0.1', sc_port=57120):
         self.ord_energy = ord_energy
+        self.sc_ctx = sc.SuperColliderContext(sc_host, sc_port)
 
     def OrdEnergy(self, x):
         return self.ord_energy.Energy(x)

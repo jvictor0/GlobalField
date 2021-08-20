@@ -5,7 +5,7 @@ class Instrument:
         self.name = name
 
     def Play(self, ctx, args):
-        pass
+        ctx.sc_ctx.Play(self.name, args)
 
     def __str__(self):
         return "Instrument('%s')" % self.name
@@ -20,10 +20,10 @@ class Note:
         self.energy = energy
 
     def Play(self, ctx):
-        self.instrument.Play(ctx, args)
+        self.instrument.Play(ctx, self.args)
 
     def __str__(self):
-        return "Note(%s, %s, %f)" % (self.instrument, util.StrList(self.args), self.energy)
+        return "Note(%s, %s, %f)" % (self.instrument, util.StrShortList(self.args), self.energy)
 
     def __repr__(self):
         return "instrument.Note(%s, %s, %f)" % (repr(self.instrument), util.ReprList(self.args), self.energy)
