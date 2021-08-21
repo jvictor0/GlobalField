@@ -1,6 +1,7 @@
 import time
 import util
 import event
+import copy
 
 class Beat:
     def __init__(self, beat, denomonator, events):
@@ -9,21 +10,8 @@ class Beat:
         self.events = events
 
     def Play(self, ctx):
-        left = 1.0
-        if len(self.events) > 0 and self.events[0].position.offset_numerator > 0:
-            dur = self.events[0].position.FromStart().AsDecimal()
-            time.sleep(ctx.ToWallClock(dur))
-            left -= dur
-        
-        for ix in xrange(len(self.events)):
-            self.events[ix].Play(ctx)
-            if ix < len(self.events) - 1:
-                dur = self.events[ix].Diff(events[ix + 1]).AsDecimal()
-                time.sleep(ctx.ToWallClock(dur))
-                left -= dur
-        
-        if left > 0:
-            time.sleep(ctx.ToWallClock(left))
+        for e in self.events:
+            e.Play(ctx)
 
     def EventsAt(self, pos):
         assert isinstance(pos, event.Position)
@@ -49,6 +37,13 @@ class Beat:
         new_events += [e for e in self.events if event.position <= e.position]
         self.events = new_events
 
+    def AsAbsolute(self, abs_beat):
+        result = copy.deepcopy(self)
+        result.beat = abs_beat
+        for e in result.events:
+            e.position.beat = abs_beat
+        return result
+        
     def __str__(self):
         if len(self.events) == 0:
             return "Beat(%d, %d, [])" % (self.beat, self.denomonator)
@@ -99,9 +94,11 @@ class PatternStats:
         assert stats_copy.denomonator_spectrum == self.denomonator_spectrum
                     
 class Pattern:
-    def __init__(self, beats):
+    def __init__(self, energy, beats):
+        self.pat_id = util.NextId()
         self.beats = beats
         self.stats = PatternStats(self)
+        self.energy = energy
 
     def Play(self, ctx, start_beat=0):
         for b in self.beats:
@@ -113,14 +110,19 @@ class Pattern:
             assert self.beats[ix].beat == ix
         self.stats.Validate(self)
 
+    def Clone(self):
+        result = copy.deepcopy(self)
+        result.pat_id = util.NextId()
+        return result
+        
     def __str__(self):
-        return "Pattern\n(\n    %s\n)" % (util.StrList(self.beats))
+        return "Pattern\n(\n    %f,\n    %s\n)" % (self.energy, util.StrList(self.beats))
 
     def __repr__(self):
-        return "pattern.Pattern(%s)" % (util.ReprList(self.beats))
+        return "pattern.Pattern(%f, %s)" % (self.energy, util.ReprList(self.beats))
 
 
 def MakeEmpty(num_beats):
     beats = [Beat(b, 1, []) for b in xrange(num_beats)]
-    return Pattern(beats)
+    return Pattern(0.0, beats)
 

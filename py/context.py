@@ -3,6 +3,7 @@ import math
 import mutation
 import instrument
 import sc
+import play_state
 import time
 
 class PrimeOrdEnergy:
@@ -37,11 +38,17 @@ x_default_ord_energy = OrdEnergy([
     PrimeOrdEnergy(11, 1024.0)])
 
 class Context:
-    def __init__(self, ord_energy=x_default_ord_energy, sc_host='127.0.0.1', sc_port=57120):
+    def __init__(self,
+                 ord_energy=x_default_ord_energy,
+                 sc_host='127.0.0.1',
+                 sc_port=57120,
+                 secs_per_beat=1.0,
+                 latency=0.25):
         self.ord_energy = ord_energy
         self.sc_ctx = sc.SuperColliderContext(sc_host, sc_port)
-        self.play_ctx = PlayContext()
-        self.StartTimer()
+        self.clock_info = ClockInfo(secs_per_beat, latency)
+        self.StartClock()
+        self.play_state = None
 
     def OrdEnergy(self, x):
         return self.ord_energy.Energy(x)
@@ -58,34 +65,39 @@ class Context:
             return instrument.Note(instrument.Instrument("tik"), [], 1.0)
 
     def PositionTimestamp(self, pos):
-        return self.play_ctx.PositionTimestamp(pos)
+        return self.clock_info.PositionTimestamp(pos)
 
-    def StartTimer(self):
-        self.play_ctx.StartTimer()
-        self.sc_ctx.StartClock(self.play_ctx.start_timestamp)
+    def StartClock(self):
+        self.clock_info.StartClock()
+        self.sc_ctx.StartClock(self.clock_info.start_timestamp)
+
+    def InitPlayState(self, **kwargs):
+        self.play_state = play_state.PlayState(**kwargs)
+
+    def WaitForBeat(self, beat):
+        self.clock_info.WaitForBeat(beat)
+
+    def NextBeat(self):
+        self.clock_info.WaitForBeat(self.play_state.absolute_beat_ix)
+        return self.play_state.NextBeat()        
         
-class PlayContext:
+        
+class ClockInfo:
     def __init__(self, secs_per_beat=1.0, latency=0.25):
         self.secs_per_beat = secs_per_beat
         self.latency = latency
         self.start_timestamp = time.time()
 
-    def StartTimer(self):
+    def StartClock(self):
         self.start_timestamp = time.time()
         
     def PositionTimestamp(self, pos):
         return self.start_timestamp + self.latency + self.secs_per_beat * pos.AsDecimal()
 
-    def Advance(self, beats):
-        self.start_timestamp += self.secs_per_beat * beats
-
-    # WaitForBeat - Sleep til 1 second before the beat_ix, not including latency
+    # WaitForBeat - Sleep til 1 second before the beat_ix, not including latency.
     #
-    def WaitForBeat(beat):
+    def WaitForBeat(self, beat):
         beat_time = self.start_timestamp + self.secs_per_beat * beat
-        sleep_time = min(beat_time - time.time() - 1.0, 0)
-        time.time(sleep_time)
-        
-
-
+        sleep_time = max(beat_time - time.time() - 1.0, 0.0)
+        time.sleep(sleep_time)
         

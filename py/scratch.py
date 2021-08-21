@@ -3,6 +3,8 @@ import instrument
 import reload
 import event
 import pattern
+import play_state
+import driver
 
 def Reload():
     reload.Reload()
@@ -13,11 +15,14 @@ def MakeClicks(num_beats=8):
                               instrument.Note(instrument.Instrument("tik"), [], 1.0),
                               event.Position(i, 0, 1))])
              for i in xrange(num_beats)]
-    return pattern.Pattern(beats)
+    return pattern.Pattern(float(num_beats), beats)
 
 def PlayClicks(num_beats=8):
     ctx = context.Context()
     pattern = MakeClicks(num_beats)
-    for b in pattern.beats:
-        for e in b.events:
-            e.Play(ctx)
+    generation = play_state.GenerationFromPattern(pattern)
+    ctx.InitPlayState(initial_generation=generation)
+    driver.DriverThread(ctx)
+
+if __name__ == "__main__":
+    PlayClicks()

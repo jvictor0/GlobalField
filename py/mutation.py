@@ -78,7 +78,7 @@ class Mutation:
         
         required_energy, p = random.choice(possible)
 
-        new_pattern = copy.deepcopy(self.pattern)
+        new_pattern = self.pattern.Clone()
         new_beat = new_pattern.beats[beat.beat]
         new_beat.denomonator *= p
         new_pattern.stats.RecordDenomonator(p, factors.get(p, 0) + 1)
@@ -125,7 +125,7 @@ class Mutation:
         new_note = self.ctx.GenerateNote(note_energy_budget, notes_at_pos)
         new_event = event.Event(new_note, pos)
 
-        new_pattern = copy.deepcopy(self.pattern)
+        new_pattern = self.pattern.Clone()
         new_pattern.beats[beat.beat].AddEvent(new_event)
         self.energy -= new_event.Energy(self.ctx)
         assert self.energy > 0

@@ -1,4 +1,10 @@
 import random
+import threading
+
+try:
+    assert g_utilInitialized
+except NameError:
+    g_utilInitialized = False
 
 def GCD(x, y):
     while y != 0:
@@ -21,7 +27,8 @@ def StrShortList(lst):
 def ReprList(lst):
     return "[" + ",".join(map(repr, lst)) + "]"
 
-g_primes = [2,3,5,7,11]
+if not g_utilInitialized:
+    g_primes = [2,3,5,7,11]
 
 def Factor(x):
     result = {}
@@ -40,7 +47,6 @@ def Factor(x):
     
     return result
             
-
 def ExpoIterator(lst, prob=0.5):
     while len(lst) > 0:
         ix = 0
@@ -48,3 +54,16 @@ def ExpoIterator(lst, prob=0.5):
             ix += 1
         yield lst[ix]
         del lst[ix]
+
+if not g_utilInitialized:
+    g_nextId = 0
+    g_nextIdLock = threading.Lock()
+
+def NextId():
+    global g_nextId
+    with g_nextIdLock:
+        g_nextId += 1
+        return g_nextId
+    
+g_utilInitialized = True
+
