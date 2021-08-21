@@ -3,6 +3,7 @@ import math
 import mutation
 import instrument
 import sc
+import time
 
 class PrimeOrdEnergy:
     def __init__(self, prime, base):
@@ -39,6 +40,8 @@ class Context:
     def __init__(self, ord_energy=x_default_ord_energy, sc_host='127.0.0.1', sc_port=57120):
         self.ord_energy = ord_energy
         self.sc_ctx = sc.SuperColliderContext(sc_host, sc_port)
+        self.play_ctx = PlayContext()
+        self.StartTimer()
 
     def OrdEnergy(self, x):
         return self.ord_energy.Energy(x)
@@ -53,3 +56,36 @@ class Context:
             raise mutation.MutationEnergyException(None, energy_budget)
         else:
             return instrument.Note(instrument.Instrument("tik"), [], 1.0)
+
+    def PositionTimestamp(self, pos):
+        return self.play_ctx.PositionTimestamp(pos)
+
+    def StartTimer(self):
+        self.play_ctx.StartTimer()
+        self.sc_ctx.StartClock(self.play_ctx.start_timestamp)
+        
+class PlayContext:
+    def __init__(self, secs_per_beat=1.0, latency=0.25):
+        self.secs_per_beat = secs_per_beat
+        self.latency = latency
+        self.start_timestamp = time.time()
+
+    def StartTimer(self):
+        self.start_timestamp = time.time()
+        
+    def PositionTimestamp(self, pos):
+        return self.start_timestamp + self.latency + self.secs_per_beat * pos.AsDecimal()
+
+    def Advance(self, beats):
+        self.start_timestamp += self.secs_per_beat * beats
+
+    # WaitForBeat - Sleep til 1 second before the beat_ix, not including latency
+    #
+    def WaitForBeat(beat):
+        beat_time = self.start_timestamp + self.secs_per_beat * beat
+        sleep_time = min(beat_time - time.time() - 1.0, 0)
+        time.time(sleep_time)
+        
+
+
+        

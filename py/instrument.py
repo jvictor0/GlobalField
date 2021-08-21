@@ -4,8 +4,8 @@ class Instrument:
     def __init__(self, name):
         self.name = name
 
-    def Play(self, ctx, args):
-        ctx.sc_ctx.Play(self.name, args)
+    def Play(self, ctx, timestamp, args):
+        ctx.sc_ctx.Play(timestamp, self.name, args)
 
     def __str__(self):
         return "Instrument('%s')" % self.name
@@ -19,8 +19,8 @@ class Note:
         self.args = args
         self.energy = energy
 
-    def Play(self, ctx):
-        self.instrument.Play(ctx, self.args)
+    def Play(self, ctx, timestamp):
+        self.instrument.Play(ctx, timestamp, self.args)
 
     def __str__(self):
         return "Note(%s, %s, %f)" % (self.instrument, util.StrShortList(self.args), self.energy)

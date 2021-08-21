@@ -1,5 +1,6 @@
 import math
 import util
+import time
 
 class Position:
     def __init__(self, beat, num, den):
@@ -31,6 +32,9 @@ class Position:
     def CrossMul(self, other):
         return (self.offset_numerator * other.offset_denomonator,
                 other.offset_numerator * self.offset_denomonator)
+
+    def AsDecimal(self):
+        return float(self.beat) + float(self.offset_numerator) / float(self.offset_denomonator)
     
     def __le__(self, other):
         a,b = self.CrossMul(other)
@@ -75,8 +79,10 @@ class Event:
         self.note = note
         self.position = position
 
-    def Play(self):
-        self.note.Play()
+    def Play(self, ctx):
+        timestamp = ctx.PositionTimestamp(self.position)
+        print "playing in",  (timestamp - time.time())
+        self.note.Play(ctx, timestamp)
 
     def Dur(self, nxt):
         return nxt.Diff(self)

@@ -14,13 +14,21 @@ class SuperColliderContext:
             self.client.send(msg)
             del self.running_notes[inst_name]
 
-    def Play(self, inst_name, inst_args):
+    def Play(self, timestamp, inst_name, inst_args):
         self.StopInst(inst_name)
         msg = pyOSC3.OSCMessage()
-        print "sending msg"
+        print "sending msg", timestamp
         msg.setAddress("/gf_play")
+        msg.append("%0.6f" % timestamp)
         msg.append(inst_name)
         for ia in inst_args:
             msg.append(ia)
         self.client.send(msg)
         self.running_notes[inst_name] = inst_args
+
+    def StartClock(self, timestamp):
+        msg = pyOSC3.OSCMessage()
+        print "setting base timestamp", timestamp
+        msg.setAddress("/gf_start_clock")
+        msg.append("%0.6f" % timestamp)
+        self.client.send(msg)
