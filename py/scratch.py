@@ -24,5 +24,13 @@ def PlayClicks(num_beats=8):
     ctx.InitPlayState(initial_generation=generation)
     driver.DriverThread(ctx)
 
+def DoTheThing(num_beats=4):
+    ctx = context.Context()
+    pattern = MakeClicks(num_beats)
+    generation = play_state.GenerationFromPattern(pattern)
+    ctx.InitPlayState(initial_generation=generation, max_patterns=1)
+    driver.StartDriver(ctx)
+    driver.MutationREPL(ctx)
+    
 if __name__ == "__main__":
-    PlayClicks()
+    DoTheThing()

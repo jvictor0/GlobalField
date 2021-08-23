@@ -81,7 +81,6 @@ class Event:
 
     def Play(self, ctx):
         timestamp = ctx.PositionTimestamp(self.position)
-        print "playing in",  (timestamp - time.time())
         self.note.Play(ctx, timestamp)
 
     def Dur(self, nxt):

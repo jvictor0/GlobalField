@@ -90,7 +90,6 @@ class PlayState:
         return beat.AsAbsolute(self.absolute_beat_ix - 1)
             
     def StartPattern(self, generation):
-        print "starting new pattern"
         self.beat_ix = 1
         new_live_ix = random.randrange(len(generation.patterns))
         self.live_pattern = LivePattern(generation.patterns[new_live_ix], new_live_ix)
@@ -114,8 +113,7 @@ class PlayState:
             if new_pattern.pat_id == self.live_pattern.pattern.pat_id:
                 self.beat_ix += 1
                 return self.ToAbsolute(self.live_pattern.pattern.beats[self.beat_ix - 1])
-            elif live_pattern.NumBeats() == len(generation.patterns[live_pattern.ix].beats):
-                print "new pattern found at same beat"
+            elif self.live_pattern.NumBeats() == len(generation.patterns[self.live_pattern.ix].beats):
                 self.beat_ix += 1
                 self.live_pattern = LivePattern(new_pattern, self.live_pattern.ix)
                 return self.ToAbsolute(new_pattern.beats[self.beat_ix - 1])

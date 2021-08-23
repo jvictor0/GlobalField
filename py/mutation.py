@@ -9,11 +9,43 @@ class MutationEnergyException:
         self.required_energy = required_energy
         self.actual_energy = actual_energy
 
-class Mutation:
+class Mutation(object):
+    def __init__(self, base_pattern, new_pattern):
+        self.base_pattern = base_pattern
+        self.new_pattern = new_pattern
+        self.energy = min(0.0, new_pattern.energy - base_pattern.energy)
+
+    def Validate(self):
+        pass
+        
+class DenomonatorMutation(Mutation):
+    def __init__(self, base_pattern, new_pattern, beat, factor):
+        super(DenomonatorMutation, self).__init__(base_pattern, new_pattern)
+        self.beat = beat
+        self.factor = factor
+        print "denomonator factor", factor, "beat", beat
+        
+    def Validate(self):
+        assert self.base_pattern.NumBeats() == self.new_pattern.NumBeats()
+        for ix in xrange(self.base_pattern.NumBeats()):
+            if ix == self.beat:
+                assert self.base_pattern.beats[ix].denomonator * self.factor == self.new_pattern.beats[ix].denomonator
+            else:
+                assert self.base_pattern.beats[ix].denomonator == self.new_pattern.beats[ix].denomonator
+
+class AddNotesMutation(Mutation):
+    def __init__(self, base_pattern, new_pattern, new_events):
+        super(AddNotesMutation, self).__init__(base_pattern, new_pattern)
+        self.new_events = new_events
+        print "new note", self.new_events[0]
+
+    def AddEvent(self, event):
+        return AddNotesMutation(self.base_pattern, self.new_pattern, self.events + [event])        
+        
+class Mutator:
     def __init__(self, ctx, pattern):
         self.ctx = ctx
         self.pattern = pattern
-        self.energy = 0
 
     # Given a list of (score, obj) pairs, call fnc on each obj in roughly-but-not-exactly the order
     # of the score, until an object returns without raising a MutationEnergyException.  If no such
@@ -33,7 +65,7 @@ class Mutation:
                 elif e.required_energy is not None:
                     required_energy = min(required_energy, e.required_energy)
 
-        raise MutationEnergyException(required_energy, self.energy)
+        raise MutationEnergyException(required_energy, self.ctx.MutationEnergy())
         
     def BeatDenomonatorScore(self, beat):
         factors = util.Factor(beat.denomonator)
@@ -70,11 +102,11 @@ class Mutation:
             else:
                 min_energy = min(required_energy, min_energy)
                 
-            if required_energy < self.energy:
+            if required_energy < self.ctx.MutationEnergy():
                 possible.append((required_energy, p))
             
         if len(possible) == 0:
-            raise MutationEnergyException(required_energy, self.energy)
+            raise MutationEnergyException(required_energy, self.ctx.MutationEnergy())
         
         required_energy, p = random.choice(possible)
 
@@ -83,9 +115,9 @@ class Mutation:
         new_beat.denomonator *= p
         new_pattern.stats.RecordDenomonator(p, factors.get(p, 0) + 1)
 
-        self.energy -= required_energy
+        self.ctx.ConsumeMutationEnergy(required_energy)
         
-        return new_pattern
+        return DenomonatorMutation(self.pattern, new_pattern, new_beat.beat, p)
 
     def BeatAddNoteScore(self, beat):
         score = 0.0
@@ -121,13 +153,51 @@ class Mutation:
         # The energy of the event is the energy of the note times its positional log ord energy, so
         # the budget for a notes energy is the total budged / log ord energy.
         #
-        note_energy_budget = self.energy / self.ctx.LogOrdEnergy(pos.offset_denomonator)
+        note_energy_budget = self.ctx.MutationEnergy() / self.ctx.LogOrdEnergy(pos.offset_denomonator)
         new_note = self.ctx.GenerateNote(note_energy_budget, notes_at_pos)
         new_event = event.Event(new_note, pos)
 
         new_pattern = self.pattern.Clone()
         new_pattern.beats[beat.beat].AddEvent(new_event)
-        self.energy -= new_event.Energy(self.ctx)
-        assert self.energy > 0
+        self.ctx.ConsumeMutationEnergy(new_event.Energy(self.ctx))
 
-        return new_pattern
+        return AddNotesMutation(self.pattern, new_pattern, [new_event])
+
+    def DoMutation(self):
+        add_first = random.choice([True, False])
+        try:
+            if add_first:
+                return self.AddPatternBeatNote()
+            else:
+                return self.IncreasePatternBeatDenomonator()
+        except MutationEnergyException as e:
+            print "not enough energy", self.ctx.MutationEnergy(), "needs", e.required_energy, ("add note" if add_first else "denom")
+            if not add_first:
+                return self.AddPatternBeatNote()
+            else:
+                return self.IncreasePatternBeatDenomonator()
+    
+class MutationContext:
+    def __init__(self, ctx, initial_energy=0):
+        self.ctx = ctx
+        self.energy = initial_energy
+
+    def MutatePattern(self, pattern):
+        mut = Mutator(self.ctx, pattern)
+        return mut.DoMutation().new_pattern
+            
+    def AddEnergyAndMutate(self, energy):
+        self.energy += energy
+        first = True
+        while first or random.choice([True, False]):
+            first = False
+            pattern = self.ctx.RandomActivePattern()
+            try:                
+                new_pattern = self.MutatePattern(pattern)
+            except MutationEnergyException as e:
+                print "still not enough energy", self.energy, "needs", e.required_energy
+
+                return
+
+            self.ctx.AddPattern(new_pattern)
+    

@@ -114,7 +114,10 @@ class Pattern:
         result = copy.deepcopy(self)
         result.pat_id = util.NextId()
         return result
-        
+
+    def NumBeats(self):
+        return len(self.beats)
+    
     def __str__(self):
         return "Pattern\n(\n    %f,\n    %s\n)" % (self.energy, util.StrList(self.beats))
 

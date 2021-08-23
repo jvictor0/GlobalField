@@ -17,7 +17,6 @@ class SuperColliderContext:
     def Play(self, timestamp, inst_name, inst_args):
         self.StopInst(inst_name)
         msg = pyOSC3.OSCMessage()
-        print "sending msg", timestamp
         msg.setAddress("/gf_play")
         msg.append("%0.6f" % timestamp)
         msg.append(inst_name)

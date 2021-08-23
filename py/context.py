@@ -5,6 +5,7 @@ import instrument
 import sc
 import play_state
 import time
+import random
 
 class PrimeOrdEnergy:
     def __init__(self, prime, base):
@@ -49,6 +50,7 @@ class Context:
         self.clock_info = ClockInfo(secs_per_beat, latency)
         self.StartClock()
         self.play_state = None
+        self.mutation_ctx = mutation.MutationContext(self)
 
     def OrdEnergy(self, x):
         return self.ord_energy.Energy(x)
@@ -80,7 +82,23 @@ class Context:
     def NextBeat(self):
         self.clock_info.WaitForBeat(self.play_state.absolute_beat_ix)
         return self.play_state.NextBeat()        
-        
+
+    def MutationEnergy(self):
+        return self.mutation_ctx.energy
+
+    def ConsumeMutationEnergy(self, delta):
+        assert self.mutation_ctx.energy > delta
+        self.mutation_ctx.energy -= delta
+
+    def AddMutationEnergy(self, delta):
+        self.ConsumeMutationEnergy(-delta)
+
+    def RandomActivePattern(self):
+        latest_gen = self.play_state.GetLatestGeneration()
+        return random.choice(latest_gen.patterns)
+
+    def AddPattern(self, pattern):
+        self.play_state.AddPattern(pattern)
         
 class ClockInfo:
     def __init__(self, secs_per_beat=1.0, latency=0.25):
