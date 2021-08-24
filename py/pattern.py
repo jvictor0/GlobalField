@@ -60,6 +60,8 @@ class PatternStats:
         # is the number of beats with denomonator divisible by p^i.
         #
         self.denomonator_spectrum = {}
+        self.total_slots = 0
+        self.total_notes = 0
         if pattern is not None:
             self.ReInit(pattern)
 
@@ -82,6 +84,9 @@ class PatternStats:
                         self.denomonator_spectrum[p].append(0)
                     self.denomonator_spectrum[p][i] += 1
 
+            self.total_slots += b.denomonator
+            self.total_notes += len(b.events)
+
     def DenomonatorSpectrum(self, p, pwr):
         if p not in self.denomonator_spectrum:
             return 0
@@ -92,7 +97,10 @@ class PatternStats:
     def Validate(self, pattern):
         stats_copy = PatternStats(pattern)
         assert stats_copy.denomonator_spectrum == self.denomonator_spectrum
-                    
+
+    def Density(self):
+        return float(self.total_notes) / float(self.total_slots)
+        
 class Pattern:
     def __init__(self, energy, beats):
         self.pat_id = util.NextId()

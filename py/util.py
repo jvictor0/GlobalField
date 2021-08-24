@@ -1,5 +1,11 @@
 import random
 import threading
+import time
+import datetime
+import threading
+
+def timestamp():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
 
 try:
     assert g_utilInitialized
@@ -65,5 +71,31 @@ def NextId():
         g_nextId += 1
         return g_nextId
     
+if not g_utilInitialized:
+    g_logLevels = {
+        "Mutation": 0
+    }
+
+    g_levels = ["DEBUG", "INFO", "WARNING"]
+
+    g_logLock = threading.Lock()
+    
+def Trace(level, tag, msg, *largs):
+    if level >= 2 or g_logLevels[tag] <= level:
+        with g_logLock:
+            print "%s [%s] %s: %s" % (timestamp(), tag, g_levels[level], msg % tuple(largs))
+
+def TraceDebug(tag, msg, *largs):
+    Trace(0, tag, msg, *largs)
+
+def TraceInfo(tag, msg, *largs):
+    Trace(1, tag, msg, *largs)
+
+def TraceWarning(tag, msg, *largs):
+    Trace(2, tag, msg, *largs)
+
 g_utilInitialized = True
 
+
+
+    

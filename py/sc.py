@@ -27,7 +27,6 @@ class SuperColliderContext:
 
     def StartClock(self, timestamp):
         msg = pyOSC3.OSCMessage()
-        print "setting base timestamp", timestamp
         msg.setAddress("/gf_start_clock")
         msg.append("%0.6f" % timestamp)
         self.client.send(msg)
