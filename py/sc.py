@@ -20,8 +20,9 @@ class SuperColliderContext:
         msg.setAddress("/gf_play")
         msg.append("%0.6f" % timestamp)
         msg.append(inst_name)
-        for ia in inst_args:
-            msg.append(ia)
+        for name, ia in inst_args:
+            msg.append(name)
+            msg.append("%06.f" % ia)
         self.client.send(msg)
         self.running_notes[inst_name] = inst_args
 

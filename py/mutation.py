@@ -1,6 +1,6 @@
 import event
 import util
-
+import time
 import copy
 import random
 
@@ -46,22 +46,17 @@ class AddNotesMutation(Mutation):
 
     def AddEvent(self, event):
         return AddNotesMutation(self.base_pattern, self.new_pattern, self.events + [event])        
-        
-class Mutator:
-    def __init__(self, ctx, pattern):
-        self.ctx = ctx
-        self.pattern = pattern
 
-    # Given a list of (score, obj) pairs, call fnc on each obj in roughly-but-not-exactly the order
-    # of the score, until an object returns without raising a MutationEnergyException.  If no such
-    # is found, re-raise the exception with the minimal required energy.
-    #
-    def TryForEach(self, lst, fnc):
-        random.shuffle(lst)
-        lst.sort()
-        
+# Given a list of (score, obj) pairs, call fnc on each obj in roughly-but-not-exactly the order
+# of the score, until an object returns without raising a MutationEnergyException.  If no such
+# is found, re-raise the exception with the minimal required energy.
+#
+def TryForEach(energy_budget, lst, fnc, eccentricity=0.25):
+    util.NormalizeAndSortScoreList(lst, eccentricity)
+    t0 = time.time()
+    try:
         required_energy = None
-        for score, obj in util.ExpoIterator(lst):
+        for score, obj in lst:
             try:
                 return fnc(obj)
             except MutationEnergyException as e:
@@ -69,8 +64,18 @@ class Mutator:
                     required_energy = e.required_energy
                 elif e.required_energy is not None:
                     required_energy = min(required_energy, e.required_energy)
-
-        raise MutationEnergyException(required_energy, self.ctx.MutationEnergy())
+                    
+        raise MutationEnergyException(required_energy, energy_budget)
+    finally:
+        time_taken = time.time() - t0
+        if time_taken > 1.0:
+            util.TraceInfo("Mutation", "%s took %f seconds to process %d items.",
+                           util.Caller(), time_taken, len(lst))
+ 
+class Mutator:
+    def __init__(self, ctx, pattern):
+        self.ctx = ctx
+        self.pattern = pattern
         
     def BeatDenomonatorScore(self, beat):
         factors = util.Factor(beat.denomonator)
@@ -88,7 +93,12 @@ class Mutator:
         beats_with_scores = [(self.BeatDenomonatorScore(b), b) for b in self.pattern.beats]
 
         try:
-            return self.TryForEach(beats_with_scores, self.IncreaseBeatDenomonator)
+            return TryForEach(
+                self.ctx.MutationEnergy(),
+                beats_with_scores,
+                self.IncreaseBeatDenomonator,
+                self.ctx.mutation_ctx.eccentricity)
+        
         except MutationEnergyException as e:
             util.TraceDebug("Mutation", "Not enough energy to IncraseDenomonator.  Required %s has %f.",
                             e.required_energy, e.actual_energy)
@@ -128,6 +138,7 @@ class Mutator:
         new_pattern.stats.RecordDenomonator(p, factors.get(p, 0) + 1)
 
         self.ctx.ConsumeMutationEnergy(required_energy)
+        new_pattern.energy += required_energy
 
         util.TraceDebug("Mutation", "Increasing denomonator %d * %d -> %d at cost %f (total %f).",
                         old_denomonator, p, new_beat.denomonator,
@@ -154,7 +165,12 @@ class Mutator:
         beats_with_scores = [(self.BeatAddNoteScore(b), b) for b in self.pattern.beats]
 
         try:
-            return self.TryForEach(beats_with_scores, self.AddBeatNote)
+            return TryForEach(
+                self.ctx.MutationEnergy(),
+                beats_with_scores,
+                self.AddBeatNote,
+                self.ctx.mutation_ctx.eccentricity)
+        
         except MutationEnergyException as e:
             util.TraceDebug("Mutation", "Not enough energy for AddNote.  Required %s has %f.",
                             e.required_energy, e.actual_energy)
@@ -166,7 +182,11 @@ class Mutator:
             score = sum([e.Energy(self.ctx) for e in beat.EventsAt(pos)])
             positions_with_scores.append((score, pos))
 
-        return self.TryForEach(positions_with_scores, lambda pos: self.AddPositionNote(beat, pos))
+        return TryForEach(
+            self.ctx.MutationEnergy(),
+            positions_with_scores,
+            lambda pos: self.AddPositionNote(beat, pos),
+            self.ctx.mutation_ctx.eccentricity)
 
     def AddPositionNote(self, beat, pos):
         notes_at_pos = [e.note for e in beat.EventsAt(pos)]
@@ -179,7 +199,7 @@ class Mutator:
         note_energy_budget = energy_avail / position_cost
         
         try:
-            new_note = self.ctx.GenerateNote(note_energy_budget, notes_at_pos)
+            new_note = self.ctx.GenerateNote(note_energy_budget, notes_at_pos, self.pattern.stats)
         except MutationEnergyException as e:
             raise e.MultRequired(position_cost)
 
@@ -187,8 +207,10 @@ class Mutator:
 
         new_pattern = self.pattern.Clone()
         new_pattern.beats[beat.beat].AddEvent(new_event)
-        new_pattern.stats.total_notes += 1
-        self.ctx.ConsumeMutationEnergy(new_event.Energy(self.ctx))
+        new_pattern.stats.RecordEvent(new_event)
+        energy_used = new_event.Energy(self.ctx)
+        self.ctx.ConsumeMutationEnergy(energy_used)
+        new_pattern.energy += energy_used
 
         util.TraceDebug("Mutation", "Adding beat at pos %d/%d at cost %f (total %f).",
                         pos.offset_numerator, pos.offset_denomonator,
@@ -210,24 +232,40 @@ class Mutator:
                 return self.IncreasePatternBeatDenomonator()
     
 class MutationContext:
-    def __init__(self, ctx, initial_energy=0):
+    def __init__(self, ctx, initial_energy=0, eccentricity=0.5, stinginess=2.0):
         self.ctx = ctx
         self.energy = initial_energy
+        self.eccentricity = eccentricity
+        self.stinginess = stinginess
 
     def MutatePattern(self, pattern):
         mut = Mutator(self.ctx, pattern)
-        return mut.DoMutation().new_pattern
+        return mut.DoMutation()
             
     def AddEnergyAndMutate(self, energy):
         self.energy += energy
-        first = True
-        while first or random.choice([True, False]):
-            first = False
+        starting_energy = self.energy
+        ending_energy = random.uniform(0, 1) * starting_energy * self.stinginess
+        while ending_energy < self.energy:
             pattern = self.ctx.RandomActivePattern()
             try:                
-                new_pattern = self.MutatePattern(pattern)
+                mutation = self.MutatePattern(pattern)
             except MutationEnergyException as e:
                 return
 
-            self.ctx.AddPattern(new_pattern)
-    
+            self.ctx.AddPattern(mutation.new_pattern)
+
+class MutationDrip:
+    def __init__(self, ctx, period=1.0, energy=10.0):
+        self.ctx = ctx
+        self.period = period
+        self.energy = energy
+
+    def Run(self):
+        while True:
+            t0 = time.time()
+            self.ctx.mutation_ctx.AddEnergyAndMutate(self.energy)            
+            time.sleep(max(0, self.period + t0 - time.time()))
+
+
+        

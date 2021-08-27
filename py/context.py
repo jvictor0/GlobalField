@@ -51,6 +51,7 @@ class Context:
         self.StartClock()
         self.play_state = None
         self.mutation_ctx = mutation.MutationContext(self)
+        self.note_generator = None
 
     def OrdEnergy(self, x):
         return self.ord_energy.Energy(x)
@@ -58,14 +59,9 @@ class Context:
     def LogOrdEnergy(self, x):
         return math.log(math.exp(1) - 1.0 + self.OrdEnergy(x))
 
-    def GenerateNote(self, energy_budget, existing_notes):
-        if energy_budget < 1.0:
-            raise mutation.MutationEnergyException(1.0, energy_budget)
-        elif len(existing_notes) > 0:
-            raise mutation.MutationEnergyException(None, energy_budget)
-        else:
-            return instrument.Note(instrument.Instrument("tik"), [], 1.0)
-
+    def GenerateNote(self, energy_budget, existing_notes, pattern_stats):
+        return self.note_generator.GenerateNote(energy_budget, existing_notes, pattern_stats)
+        
     def PositionTimestamp(self, pos):
         return self.clock_info.PositionTimestamp(pos)
 

@@ -5,10 +5,13 @@ Server.default.waitForBoot({
 	
 	"booted".postln;
 	OSCFunc( { | msg, time, addr, port |
-		("recv " + msg[1]).postln;
-		("scheduling at " + (msg[1].asFloat - base_timestamp + base_clock).asString).postln;
+		var args = Array.new(msg.size - 3);
+		msg.postln;
+		(msg.size - 3).do({ | i |
+			if(i % 2 == 1, {args.add(msg[i + 3].asFloat)}, {args.add(msg[i + 3])});
+		});
 		SystemClock.schedAbs(msg[1].asFloat - base_timestamp + base_clock,
-			{ |t| "do".postln; Synth(msg[2]) });
+			{ |t| Synth(msg[2], args) });
 	}, "/gf_play" );
 
 	OSCFunc( { | msg, time, addr, port |
@@ -17,6 +20,6 @@ Server.default.waitForBoot({
 		base_clock = SystemClock.seconds;
 	}, "/gf_start_clock" );
 
-	SynthDef(\tik, { OffsetOut.ar(0, Impulse.ar(0)); FreeSelf.kr(Impulse.kr(0)); }).add;
+	SynthDef(\tik, { |freq| OffsetOut.ar(0, Impulse.ar(freq)); FreeSelf.kr(Impulse.kr(0)); }).add;
 });
 

@@ -3,6 +3,7 @@ import threading
 import time
 import datetime
 import threading
+import inspect
 
 def timestamp():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -61,6 +62,13 @@ def ExpoIterator(lst, prob=0.5):
         yield lst[ix]
         del lst[ix]
 
+def NormalizeAndSortScoreList(lst, sigma=1.0):
+    denom = sum([s for s,o in lst])
+    for ix in xrange(len(lst)):
+        lst[ix] = (random.normalvariate(lst[ix][0], sigma), lst[ix][1])
+
+    lst.sort()    
+        
 if not g_utilInitialized:
     g_nextId = 0
     g_nextIdLock = threading.Lock()
@@ -73,7 +81,8 @@ def NextId():
     
 if not g_utilInitialized:
     g_logLevels = {
-        "Mutation": 0
+        "Mutation": 0,
+        "PlayState" : 0
     }
 
     g_levels = ["DEBUG", "INFO", "WARNING"]
@@ -94,6 +103,33 @@ def TraceInfo(tag, msg, *largs):
 def TraceWarning(tag, msg, *largs):
     Trace(2, tag, msg, *largs)
 
+def Caller():
+    print inspect.stack()[1][3]
+
+class ExpoCurve:
+    def __init__(self, coef, base, power):
+        self.coef = coef
+        self.base = base
+        self.power = power
+
+    def __call__(self, x):
+        return self.coef * self.base ** (self.power * x)
+
+class Line:
+    def __init__(self, coef, offset):
+        self.coef = coef
+        self.offset = offset
+
+    def __call__(self, x):
+        return self.offset + self.coef * x
+
+class Const:
+    def __init__(self, c):
+        self.c = c
+
+    def __call__(self, x):
+        return self.c
+    
 g_utilInitialized = True
 
 

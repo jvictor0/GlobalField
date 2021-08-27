@@ -7,6 +7,7 @@ import mutation
 import driver
 import play_state
 import sc
+import note_generation
 
 import sys
 
@@ -18,4 +19,5 @@ def Reload():
     reload(context)
     reload(mutation)
     reload(sc)
+    reload(note_generation)
     return reload(sys.modules[__name__])

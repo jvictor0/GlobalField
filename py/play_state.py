@@ -1,6 +1,7 @@
 import threading
 import bisect
 import random
+import util
 
 class Generation:
     def __init__(self, patterns, energy):
@@ -92,6 +93,7 @@ class PlayState:
     def StartPattern(self, generation):
         self.beat_ix = 1
         new_live_ix = random.randrange(len(generation.patterns))
+        util.TraceDebug("PlayState", "Starting new pattern %d.", new_live_ix)
         self.live_pattern = LivePattern(generation.patterns[new_live_ix], new_live_ix)
         return self.ToAbsolute(self.live_pattern.pattern.beats[0])
 

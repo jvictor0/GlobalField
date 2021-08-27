@@ -62,6 +62,7 @@ class PatternStats:
         self.denomonator_spectrum = {}
         self.total_slots = 0
         self.total_notes = 0
+        self.inst_count = {}
         if pattern is not None:
             self.ReInit(pattern)
 
@@ -85,8 +86,19 @@ class PatternStats:
                     self.denomonator_spectrum[p][i] += 1
 
             self.total_slots += b.denomonator
-            self.total_notes += len(b.events)
+            for e in b.events:
+                self.RecordEvent(e)
 
+    def RecordEvent(self, event):
+        self.total_notes += 1
+        inst_name = event.note.instrument.name
+        if inst_name not in self.inst_count:
+            self.inst_count[inst_name] = 0
+        self.inst_count[inst_name] += 1            
+
+    def InstPopulation(self, inst):
+        return self.inst_count[inst.name]
+        
     def DenomonatorSpectrum(self, p, pwr):
         if p not in self.denomonator_spectrum:
             return 0
