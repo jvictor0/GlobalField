@@ -83,7 +83,7 @@ class Context:
         return self.mutation_ctx.energy
 
     def ConsumeMutationEnergy(self, delta):
-        assert self.mutation_ctx.energy > delta
+        assert self.mutation_ctx.energy >= delta
         self.mutation_ctx.energy -= delta
 
     def AddMutationEnergy(self, delta):

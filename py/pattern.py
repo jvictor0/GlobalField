@@ -97,7 +97,10 @@ class PatternStats:
         self.inst_count[inst_name] += 1            
 
     def InstPopulation(self, inst):
-        return self.inst_count[inst.name]
+        if inst in self.inst_count:
+            return self.inst_count[inst.name]
+        else:
+            return 0
         
     def DenomonatorSpectrum(self, p, pwr):
         if p not in self.denomonator_spectrum:

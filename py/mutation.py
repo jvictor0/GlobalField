@@ -203,6 +203,8 @@ class Mutator:
         except MutationEnergyException as e:
             raise e.MultRequired(position_cost)
 
+        assert new_note.energy <= note_energy_budget, (new_note.energy, note_energy_budget, new_note.instrument.name)
+        
         new_event = event.Event(new_note, pos)
 
         new_pattern = self.pattern.Clone()
@@ -212,7 +214,8 @@ class Mutator:
         self.ctx.ConsumeMutationEnergy(energy_used)
         new_pattern.energy += energy_used
 
-        util.TraceDebug("Mutation", "Adding beat at pos %d/%d at cost %f (total %f).",
+        util.TraceDebug("Mutation", "Adding %s at pos %d/%d at cost %f (total %f).",
+                        new_event.note.instrument.name,
                         pos.offset_numerator, pos.offset_denomonator,
                         new_event.Energy(self.ctx), self.ctx.MutationEnergy())
         

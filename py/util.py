@@ -107,7 +107,7 @@ def Caller():
     print inspect.stack()[1][3]
 
 class ExpoCurve:
-    def __init__(self, coef, base, power):
+    def __init__(self, coef=1.0, base=2.0, power=1.0):
         self.coef = coef
         self.base = base
         self.power = power
@@ -116,7 +116,7 @@ class ExpoCurve:
         return self.coef * self.base ** (self.power * x)
 
 class Line:
-    def __init__(self, coef, offset):
+    def __init__(self, coef=1.0, offset=1.0):
         self.coef = coef
         self.offset = offset
 

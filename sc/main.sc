@@ -20,6 +20,8 @@ Server.default.waitForBoot({
 		base_clock = SystemClock.seconds;
 	}, "/gf_start_clock" );
 
+	"instruments/guru_blog_drums.sc".loadRelative;
+	
 	SynthDef(\tik, { |freq| OffsetOut.ar(0, Impulse.ar(freq)); FreeSelf.kr(Impulse.kr(0)); }).add;
 });
 

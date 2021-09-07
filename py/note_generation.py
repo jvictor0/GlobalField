@@ -108,7 +108,7 @@ class SingleInstrumentGenerator:
 
                 energy_cost *= self.collision_costs[note.instrument.name]
     
-        return energy_cost
+        return energy_cost * self.note_energy
 
     def GenerateNote(self, energy_budget, existing_notes, pattern_stats):        
         population = pattern_stats.InstPopulation(self.instrument)
@@ -117,7 +117,7 @@ class SingleInstrumentGenerator:
             raise mutation.MutationEnergyException(cost, energy_budget)
 
         params = self.params.GenPlayParams(energy_budget - cost)
-        return instrument.Note(self.instrument, params, self.note_energy)
+        return instrument.Note(self.instrument, params, cost)
             
 class NoteGenerator:
     def __init__(self, instrument_generators):
