@@ -1,0 +1,22 @@
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<html>
+  <head>
+    <title>Global Field</title>
+  </head>
+  <p>sup</p>
+  <body>
+    <p id="mutation_energy"></p>
+
+    <script>
+      setInterval(function()
+      {
+          $.get("http://localhost:2516/get_mutation_energy", function(data, status)
+          {
+              document.getElementById("mutation_energy").innerHTML = "Current mutation energy: " + data;
+          });
+      }, 1000);
+    </script>
+    
+  </body>  
+  
+</html>

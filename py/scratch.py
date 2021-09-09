@@ -7,6 +7,7 @@ import play_state
 import driver
 import mutation
 import note_generation
+import http_server
 
 import instruments.guru_blog_drums
 
@@ -35,6 +36,7 @@ def DoTheThing(num_beats=4):
     generation = play_state.GenerationFromPattern(pattern)
     ctx.InitPlayState(initial_generation=generation, max_patterns=5)
     driver.StartDriver(ctx)
+    http_server.LaunchServer(ctx)
     md = mutation.MutationDrip(ctx, period=4.0)
     md.Run()
     

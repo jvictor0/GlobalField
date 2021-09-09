@@ -82,7 +82,8 @@ def NextId():
 if not g_utilInitialized:
     g_logLevels = {
         "Mutation": 0,
-        "PlayState" : 0
+        "PlayState" : 0,
+        "Server": 0
     }
 
     g_levels = ["DEBUG", "INFO", "WARNING"]
