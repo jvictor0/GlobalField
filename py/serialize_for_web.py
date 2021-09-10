@@ -1,5 +1,15 @@
 import util
 
+def ValAndDots(note_length):
+    if util.IsPowOf(2, note_length):
+        return note_length, 0
+    elif note_length % 3 == 0 and util.IsPowOf(2, note_length / 3):
+        return 2 * note_length / 3, 1
+    elif note_length % 7 == 0 and util.IsPowOf(2, note_length / 7):
+        return 2 * note_length / 7, 2
+    else:
+        return None
+
 def SerializeBeat(beat):
     beat = beat.WithUsedDenomonator()
     denomonator = beat.denomonator
@@ -20,43 +30,77 @@ def SerializeBeat(beat):
         notes_occupied = 2 ** (pows_of_two + 1)
             
     note_type = 4 * notes_occupied
-
-    result = ""
+    max_note_length = 2 ** pows_of_two
+    
+    notes = []
     ix = 0
     while ix < denomonator:
-        if ix != 0:
-            result += ", "
-                
+        note = ""
+
         note_length = 1
-        pows_of_ix = pows_of_two if ix == 0 else util.PowsOf(2, ix)
-        max_note_length = 2 ** min(pows_of_two, pows_of_ix)
+        
         while ix + note_length < denomonator and note_length < max_note_length:
             if len(buckets[ix + note_length]) == 0:
                 note_length += 1
             else:
                 break
 
-        while not util.IsPowOf(2, note_length):
+        while not ValAndDots(note_length):
             note_length -= 1
+
+        note_pre_value, dots = ValAndDots(note_length)
             
         if len(buckets[ix]) == 0:
-            result += "B4"
+            note += "B4"
         elif len(buckets[ix]) == 1:
-            result += buckets[ix][0].note.render_note
+            note += buckets[ix][0].note.render_note
         else:
-            result += "(%s)" % " ".join([e.note.render_note for e in buckets[ix]])
+            note += "(%s)" % " ".join([e.note.render_note for e in buckets[ix]])
 
-        note_value = note_type / note_length
-        result += "/%d" % note_value
+        note_value = note_type / note_pre_value
+        note += ("/%d" % note_value) + ("." * dots)        
 
         if len(buckets[ix]) == 0:
-            result += "/r"
-                
+            note += "/r"
+
+        notes.append(note)
         ix += note_length
 
+    pre_rest = None
+    ix = 0
+    if notes[ix][-2:] == "/r":
+        pre_rest = notes[ix]
+        ix += 1
+        while notes[ix][-2:] == "/r":
+            pre_rest += ", " + notes[ix]
+            ix += 1
+
+    post_rest = None
+    pix = len(notes) - 1
+    if notes[pix][-2:] == "/r":
+        post_rest = notes[pix]
+        pix -= 1
+        while notes[pix][-2:] == "/r":
+            post_rest = notes[pix] + ", " + post_rest
+            pix -= 1
+
+    pix += 1
+    assert ix < pix
+
+    main_notes = ", ".join(notes[ix:pix])
+
+    beam_groups = []
+    if pre_rest is not None:
+        beam_groups.append({"notes": pre_rest, "beam": False})
+
+    beam_groups.append({"notes": main_notes, "beam": pix - ix > 1})
+
+    if post_rest is not None:
+        beam_groups.append({"notes": post_rest, "beam": False})
+                
     return {
         "is_binary" : is_binary,
-        "notes" : result,
+        "notes" : beam_groups,
         "notes_occupied" : notes_occupied,
         "num_notes" : denomonator,
     }

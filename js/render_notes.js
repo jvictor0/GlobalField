@@ -30,22 +30,35 @@ function renderPattern(eltId, pattern)
 
 function renderBeat(score, beat)
 {
-    if (beat["notes_occupied"] == 1 && beat["num_notes"] == 1)
+    var notes = null;
+    for (var i = 0; i < beat["notes"].length; i++)
     {
-        return score.notes(beat["notes"])
+        var this_notes = score.notes(beat["notes"][i]["notes"])
+        if (beat["notes"][i]["beam"])
+        {
+            this_notes = score.beam(this_notes, {autoStem: true})
+        }
+
+        if (i == 0)
+        {
+            notes = this_notes
+        }
+        else
+        {
+            notes = notes.concat(this_notes)
+        }
     }
-    else if (beat["is_binary"])
+    
+    if (beat["is_binary"])
     {
-        return score.beam(score.notes(beat["notes"]))
+        return notes;
     }
     else
     {
-        return score.tuplet(score.beam(
-            score.notes(beat["notes"]),
-            {
-                ratioed: false,
-                notes_occupied: beat["notes_occupied"],
-                num_notes: beat["num_notes"]
-            }));
+        return score.tuplet(notes, {
+            ratioed: false,
+            notes_occupied: beat["notes_occupied"],
+            num_notes: beat["num_notes"]
+        });    
     }
 }
