@@ -31,6 +31,16 @@ class Beat:
                 assert self.events[ix - 1].position <= e.position
             all_gcd = util.GCD(all_gcd, e.position.offset_denomonator)
 
+    def UsedDenomonator(self):
+        all_lcm = 1
+        for e in self.events:
+            gcd = util.GCD(all_lcm, e.position.offset_denomonator)
+            all_lcm = (all_lcm * e.position.offset_denomonator) / gcd
+        return all_lcm
+
+    def WithUsedDenomonator(self):
+        return Beat(self.beat, self.UsedDenomonator(), self.events)
+    
     def AddEvent(self, event):
         new_events = [e for e in self.events if e.position < event.position]
         new_events += [event]

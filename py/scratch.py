@@ -34,7 +34,7 @@ def DoTheThing(num_beats=4):
     ctx.note_generator = instruments.guru_blog_drums.three_tone_drummer
     pattern = MakeClicks(num_beats, inst_gen=instruments.guru_blog_drums.hh)
     generation = play_state.GenerationFromPattern(pattern)
-    ctx.InitPlayState(initial_generation=generation, max_patterns=5)
+    ctx.InitPlayState(initial_generation=generation, max_patterns=4)
     driver.StartDriver(ctx)
     http_server.LaunchServer(ctx)
     md = mutation.MutationDrip(ctx, period=4.0)

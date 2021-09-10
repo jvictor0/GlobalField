@@ -4,9 +4,14 @@ import time
 import util
 import threading
 import os.path
+import serialize_for_web
+import json
 
 def HTMLPath(path):
     return os.path.dirname(os.path.abspath(__file__)) + "/../html/" + path
+
+def JSPath(path):
+    return os.path.dirname(os.path.abspath(__file__)) + "/../js/" + path
 
 class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -18,11 +23,21 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.end_headers()
             with open(HTMLPath("main.html"), "r") as f:
                 self.wfile.write(f.read())
-        elif self.path == "/get_mutation_energy":
+        elif self.path == "/get_data" and g_ctx is not None:
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
+            self.send_header("Content-type", "text/json")
             self.end_headers()
-            self.wfile.write(str(g_ctx.MutationEnergy()))
+            self.wfile.write(json.dumps(serialize_for_web.SerializeContext(g_ctx)))
+        elif self.path[-3:] == ".js":
+            file_path = JSPath(self.path)
+            if os.path.exists(file_path):
+                self.send_response(200)
+                self.send_header("Content-type", "text/javascript")
+                self.end_headers()
+                with open(file_path, "r") as f:
+                    self.wfile.write(f.read())
+            else:
+                self.send_response(404)                
         else:
             self.send_response(404)
 
@@ -49,4 +64,4 @@ def LaunchServer(ctx, host='localhost', port=2516):
     t.start()
 
 if __name__ == "__main__":
-    LaunchServer(None)
+    ServerThread(None)

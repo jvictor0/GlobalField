@@ -13,6 +13,18 @@ try:
 except NameError:
     g_utilInitialized = False
 
+def PowsOf(by, x):
+    result = 0 
+    while x % by == 0:
+        result += 1
+        x /= by
+    return result
+
+def IsPowOf(by, x):
+    while x % by == 0:
+        x /= by
+    return x == 1
+
 def GCD(x, y):
     while y != 0:
         x_mod_y = x % y

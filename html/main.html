@@ -1,4 +1,6 @@
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
+<script type="text/javascript" src="render_notes.js"></script>
 <html>
   <head>
     <title>Global Field</title>
@@ -6,17 +8,21 @@
   <p>sup</p>
   <body>
     <p id="mutation_energy"></p>
+    <p id="boo"></p>
 
     <script>
       setInterval(function()
       {
-          $.get("http://localhost:2516/get_mutation_energy", function(data, status)
+          $.getJSON("get_data", function(data, status)
           {
-              document.getElementById("mutation_energy").innerHTML = "Current mutation energy: " + data;
+              var mutation_energy = data["mutation_energy"]
+              document.getElementById("mutation_energy").innerHTML = "Current mutation energy: " + mutation_energy;
+              var patterns = data["current_generation"]["patterns"]
+              renderPattern("boo", patterns[0])
           });
       }, 1000);
     </script>
-    
+
   </body>  
   
 </html>

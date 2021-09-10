@@ -15,10 +15,11 @@ class Instrument:
         return "instrument." + str(self)
 
 class Note:
-    def __init__(self, instrument, params, energy):
+    def __init__(self, instrument, params, render_note, energy):
         self.instrument = instrument
         self.params = params
         self.energy = energy
+        self.render_note = render_note
 
     def Play(self, ctx, timestamp):
         self.instrument.Play(ctx, timestamp, self.params)
