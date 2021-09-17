@@ -1,64 +1,94 @@
-function renderPattern(eltId, pattern)
-{
+function renderAllPatterns(eltId, patterns)
+{    
     document.getElementById(eltId).innerHTML = "";
+
     const VF = Vex.Flow;
     
-    var vf = new VF.Factory({renderer: {elementId: eltId}});
-    var score = vf.EasyScore();
-    var system = vf.System();
-
-    var beats = pattern["beats"]
-    var notes = null;
-    for (var i = 0; i < beats.length; i++)
+    for (var i = 0; i < patterns.length; i++)
     {
-        if (i == 0)
-        {
-            notes = renderBeat(score, beats[i]);
-        }
-        else
-        {
-            notes = notes.concat(renderBeat(score, beats[i]))
-        }
+        var renderer = new VF.Renderer(document.getElementById(eltId),
+                                       VF.Renderer.Backends.SVG);
+        renderer.resize(1000, 150);
+
+        ctx = renderer.getContext()
+        
+        renderPattern(VF, ctx, patterns[i])
     }
-
-    system.addStave({
-        voices: [score.voice(notes)]
-    }).addTimeSignature(beats.length.toString() + "/4");
-
-    vf.draw();
 }
 
-function renderBeat(score, beat)
+function renderPattern(VF, ctx, pattern)
 {
-    var notes = null;
+    var beats = pattern["beats"]
+
+    var stave = new VF.Stave(10, 25, 800);
+    stave.addTimeSignature(beats.length.toString() + "/4")
+
+    var notes = [];
+    var ornams = []
+    for (var i = 0; i < beats.length; i++)
+    {
+        notes_and_ornams = renderBeat(VF, ctx, beats[i])
+        notes = notes.concat(notes_and_ornams[0]);
+        ornams = ornams.concat(notes_and_ornams[1]);
+    }
+
+    stave.setContext(ctx).draw();
+
+    var voice = new VF.Voice({num_beats: beats.length, beat_value: 4});
+    voice.addTickables(notes);
+
+    var formatter = new VF.Formatter().joinVoices([voice]).format([voice], 800);
+
+    voice.draw(ctx, stave);
+    ornams.forEach(function(b) {b.setContext(ctx).draw()});
+}
+
+function renderBeat(VF, ctx, beat)
+{
+    var notes = [];
+    var ornams = []
     for (var i = 0; i < beat["notes"].length; i++)
     {
-        var this_notes = score.notes(beat["notes"][i]["notes"])
-        if (beat["notes"][i]["beam"])
+        var this_notes = beat["notes"][i]["notes"].map(
+            function(n) { return new VF.StaveNote(n); })
+
+        for (var j = 0; j < this_notes.length; j++)
         {
-            this_notes = score.beam(this_notes, {autoStem: true})
+            // Add the dots, since vexflow won't do it for us.
+            //
+            for (var k = 0; k < beat["notes"][i]["notes"][j]["dots"]; k++)
+            {
+                this_notes[j].addModifier(0, new VF.Dot());
+            }
         }
 
-        if (i == 0)
+        notes = notes.concat(this_notes);
+        
+        if (beat["notes"][i]["beam"])
         {
-            notes = this_notes
-        }
-        else
-        {
-            notes = notes.concat(this_notes)
+            ornams.push(new VF.Beam(this_notes));
         }
     }
     
-    if (beat["is_binary"])
+    if (!beat["is_binary"])
     {
-        return notes;
-    }
-    else
-    {
-        return score.tuplet(notes, {
+        ornams.push(new VF.Tuplet(notes, {
             ratioed: false,
             notes_occupied: beat["notes_occupied"],
             num_notes: beat["num_notes"]
-        });    
+        }));
     }
+
+    return [notes, ornams];
+}
+
+function renderScalarMetrics(eltId, metrics)
+{
+    var result = "";
+    for (let k in metrics)
+    {
+        result += "<p>" + k + ": " + metrics[k].toString() + "</p>";
+    }
+
+    document.getElementById(eltId).innerHTML = result;
 }

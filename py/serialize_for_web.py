@@ -6,7 +6,7 @@ def ValAndDots(note_length):
     elif note_length % 3 == 0 and util.IsPowOf(2, note_length / 3):
         return 2 * note_length / 3, 1
     elif note_length % 7 == 0 and util.IsPowOf(2, note_length / 7):
-        return 2 * note_length / 7, 2
+        return 4 * note_length / 7, 2
     else:
         return None
 
@@ -35,7 +35,7 @@ def SerializeBeat(beat):
     notes = []
     ix = 0
     while ix < denomonator:
-        note = ""
+        stave_note = {"clef":"treble"}
 
         note_length = 1
         
@@ -51,43 +51,42 @@ def SerializeBeat(beat):
         note_pre_value, dots = ValAndDots(note_length)
             
         if len(buckets[ix]) == 0:
-            note += "B4"
-        elif len(buckets[ix]) == 1:
-            note += buckets[ix][0].note.render_note
+            stave_note["keys"] = ["B/4"]
         else:
-            note += "(%s)" % " ".join([e.note.render_note for e in buckets[ix]])
+            stave_note["keys"] = [e.note.render_note for e in buckets[ix]]
 
         note_value = note_type / note_pre_value
-        note += ("/%d" % note_value) + ("." * dots)        
-
+        stave_note["duration"] = ("%d" % note_value) + ("d" * dots)        
+        stave_note["dots"] = dots
+        
         if len(buckets[ix]) == 0:
-            note += "/r"
+            stave_note["duration"] += "r"
 
-        notes.append(note)
+        notes.append(stave_note)
         ix += note_length
 
     pre_rest = None
     ix = 0
-    if notes[ix][-2:] == "/r":
-        pre_rest = notes[ix]
+    if notes[ix]["duration"][-1] == "r":
+        pre_rest = [notes[ix]]
         ix += 1
-        while notes[ix][-2:] == "/r":
-            pre_rest += ", " + notes[ix]
+        while notes[ix]["duration"][-1] == "r":
+            pre_rest.append(notes[ix])
             ix += 1
 
     post_rest = None
     pix = len(notes) - 1
-    if notes[pix][-2:] == "/r":
-        post_rest = notes[pix]
+    if notes[pix]["duration"][-1] == "r":
+        post_rest = [notes[pix]]
         pix -= 1
-        while notes[pix][-2:] == "/r":
-            post_rest = notes[pix] + ", " + post_rest
+        while notes[pix]["duration"][-1] == "r":
+            post_rest = [notes[pix]] + post_rest
             pix -= 1
 
     pix += 1
     assert ix < pix
 
-    main_notes = ", ".join(notes[ix:pix])
+    main_notes = notes[ix:pix]
 
     beam_groups = []
     if pre_rest is not None:
@@ -117,9 +116,14 @@ def SerializeGeneration(generation):
         "patterns" : [SerializePattern(p) for p in generation.patterns]
     }
 
-def SerializeContext(ctx):
+def SerializeScalarMetrics(ctx):
     return {
         "mutation_energy" : ctx.MutationEnergy(),
+    }
+
+def SerializeContext(ctx):
+    return {
+        "scalar_metrics" : SerializeScalarMetrics(ctx),
         "current_generation" : SerializeGeneration(ctx.play_state.GetLatestGeneration())
     }
 

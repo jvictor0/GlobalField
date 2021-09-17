@@ -7,18 +7,17 @@
   </head>
   <p>sup</p>
   <body>
-    <p id="mutation_energy"></p>
-    <p id="boo"></p>
+    <p id="scalar_metrics"></p>
+    <p id="current_composition"></p>
 
     <script>
       setInterval(function()
       {
           $.getJSON("get_data", function(data, status)
           {
-              var mutation_energy = data["mutation_energy"]
-              document.getElementById("mutation_energy").innerHTML = "Current mutation energy: " + mutation_energy;
+              renderScalarMetrics("scalar_metrics", data["scalar_metrics"])
               var patterns = data["current_generation"]["patterns"]
-              renderPattern("boo", patterns[0])
+              renderAllPatterns("current_composition", patterns)
           });
       }, 1000);
     </script>
