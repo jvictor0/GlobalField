@@ -6,6 +6,8 @@ import sc
 import play_state
 import time
 import random
+import position_queue
+import event
 
 class PrimeOrdEnergy:
     def __init__(self, prime, base):
@@ -52,6 +54,7 @@ class Context:
         self.play_state = None
         self.mutation_ctx = mutation.MutationContext(self)
         self.note_generator = None
+        self.position_queue = position_queue.PositionQueue()
 
     def OrdEnergy(self, x):
         return self.ord_energy.Energy(x)
@@ -77,7 +80,19 @@ class Context:
 
     def NextBeat(self):
         self.clock_info.WaitForBeat(self.play_state.absolute_beat_ix)
-        return self.play_state.NextBeat()        
+        next_beat = self.play_state.NextBeat()
+
+        # Record each event in the next beat in the position queue.
+        #
+        elems = []
+        for e in next_beat.events:
+            elems.append(position_queue.PositionQueueElem(
+                self.clock_info.PositionTimestamp(e.position),
+                self.play_state.live_pattern.pattern.pat_id,
+                e.RelativePosition(next_beat.relative_beat)))
+        self.position_queue.Add(elems)
+
+        return next_beat
 
     def MutationEnergy(self):
         return self.mutation_ctx.energy

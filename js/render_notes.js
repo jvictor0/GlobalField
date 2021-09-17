@@ -49,24 +49,32 @@ function renderBeat(VF, ctx, beat)
     var ornams = []
     for (var i = 0; i < beat["notes"].length; i++)
     {
-        var this_notes = beat["notes"][i]["notes"].map(
-            function(n) { return new VF.StaveNote(n); })
-
+        var current_beam = []
+        var this_notes = beat["notes"][i]["notes"];
         for (var j = 0; j < this_notes.length; j++)
         {
+            var note = this_notes[j];
+            stave_note = new VF.StaveNote(note);
+            if (note["is_current"])
+            {
+                stave_note.setStyle({fillStyle:"red"});
+            }
+            
             // Add the dots, since vexflow won't do it for us.
             //
-            for (var k = 0; k < beat["notes"][i]["notes"][j]["dots"]; k++)
+            for (var k = 0; k < note["dots"]; k++)
             {
-                this_notes[j].addModifier(0, new VF.Dot());
+                stave_note.addModifier(0, new VF.Dot());
             }
+
+            current_beam.push(stave_note);
         }
 
-        notes = notes.concat(this_notes);
+        notes = notes.concat(current_beam);
         
         if (beat["notes"][i]["beam"])
         {
-            ornams.push(new VF.Beam(this_notes));
+            ornams.push(new VF.Beam(current_beam));
         }
     }
     

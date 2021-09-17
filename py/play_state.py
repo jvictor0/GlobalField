@@ -54,6 +54,15 @@ class PlayState:
         with self.lock:
             return self.generations[-1]
 
+    def GetLatestGenerationWithPatId(self, pat_id):
+        with self.lock:
+            ix = -1
+            while True:
+                if pat_id in [p.pat_id for p in self.generations[ix].patterns]:
+                    return self.generations[ix]
+
+                ix -= 1
+        
     def AddGeneration(self, new_generation):
         with self.lock:
             self.generations.append(new_generation)

@@ -10,7 +10,7 @@ def ValAndDots(note_length):
     else:
         return None
 
-def SerializeBeat(beat):
+def SerializeBeat(beat, position):
     beat = beat.WithUsedDenomonator()
     denomonator = beat.denomonator
     buckets = [beat.EventsAt(p) for p in beat.Positions()]
@@ -35,7 +35,7 @@ def SerializeBeat(beat):
     notes = []
     ix = 0
     while ix < denomonator:
-        stave_note = {"clef":"treble"}
+        stave_note = {"clef":"treble", "is_current": False}
 
         note_length = 1
         
@@ -54,7 +54,9 @@ def SerializeBeat(beat):
             stave_note["keys"] = ["B/4"]
         else:
             stave_note["keys"] = [e.note.render_note for e in buckets[ix]]
-
+            if position is not None and position == buckets[ix][0].position:                
+                stave_note["is_current"] = True
+                
         note_value = note_type / note_pre_value
         stave_note["duration"] = ("%d" % note_value) + ("d" * dots)        
         stave_note["dots"] = dots
@@ -104,16 +106,21 @@ def SerializeBeat(beat):
         "num_notes" : denomonator,
     }
 
-def SerializePattern(pattern):
+def SerializePattern(pattern, current_position):
+    if pattern.pat_id == current_position.pattern_id:
+        pos = current_position.relative_position
+    else:
+        pos = None
+        
     return {
         "energy" : pattern.energy,
-        "beats" : [SerializeBeat(b) for b in pattern.beats]
+        "beats" : [SerializeBeat(b, pos) for b in pattern.beats]
     }
 
-def SerializeGeneration(generation):
+def SerializeGeneration(generation, current_position):
     return {
         "energy" : generation.energy,
-        "patterns" : [SerializePattern(p) for p in generation.patterns]
+        "patterns" : [SerializePattern(p, current_position) for p in generation.patterns]
     }
 
 def SerializeScalarMetrics(ctx):
@@ -122,8 +129,11 @@ def SerializeScalarMetrics(ctx):
     }
 
 def SerializeContext(ctx):
+    current_position = ctx.position_queue.Get()
+    generation = ctx.play_state.GetLatestGenerationWithPatId(current_position.pattern_id)
+    serialized_generation = SerializeGeneration(generation, current_position)
     return {
         "scalar_metrics" : SerializeScalarMetrics(ctx),
-        "current_generation" : SerializeGeneration(ctx.play_state.GetLatestGeneration())
+        "current_generation" : serialized_generation
     }
 

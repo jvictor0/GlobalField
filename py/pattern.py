@@ -6,6 +6,7 @@ import copy
 class Beat:
     def __init__(self, beat, denomonator, events):
         self.beat = beat
+        self.relative_beat = beat
         self.denomonator = denomonator
         self.events = events
 
@@ -53,7 +54,7 @@ class Beat:
         for e in result.events:
             e.position.beat = abs_beat
         return result
-        
+    
     def __str__(self):
         if len(self.events) == 0:
             return "Beat(%d, %d, [])" % (self.beat, self.denomonator)

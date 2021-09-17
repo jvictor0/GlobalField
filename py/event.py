@@ -89,6 +89,9 @@ class Event:
     def Energy(self, ctx):
         return self.note.energy * ctx.LogOrdEnergy(self.position.offset_denomonator)
 
+    def RelativePosition(self, rel_beat):
+        return Position(rel_beat, self.position.offset_numerator, self.position.offset_denomonator)
+    
     def __str__(self):
         return "Event\n(\n    %s,\n    %s\n)" % (self.note, self.position)
     
