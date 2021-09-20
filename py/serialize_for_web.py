@@ -125,7 +125,8 @@ def SerializeGeneration(generation, current_position):
 
 def SerializeScalarMetrics(ctx):
     return {
-        "mutation_energy" : ctx.MutationEnergy(),
+        "mutation energy" : ctx.MutationEnergy(),
+        "tempo BPM" : ctx.clock_info.GetBPM()
     }
 
 def SerializeContext(ctx):

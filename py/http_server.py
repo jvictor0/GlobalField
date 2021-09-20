@@ -17,17 +17,26 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
         global g_ctx
         
-        if self.path == "/":
+        if self.path in ["/", "/control"]:
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
-            with open(HTMLPath("main.html"), "r") as f:
+            fname = "main.html" if self.path == "/" else "control.html"
+            with open(HTMLPath(fname), "r") as f:
                 self.wfile.write(f.read())
+
         elif self.path == "/get_data" and g_ctx is not None:
             self.send_response(200)
             self.send_header("Content-type", "text/json")
             self.end_headers()
             self.wfile.write(json.dumps(serialize_for_web.SerializeContext(g_ctx)))
+
+        elif self.path[:5] == "/set?" and g_ctx is not None:
+            HandleSet(g_ctx, self.path[5:])
+            self.send_response(200)
+            self.send_header("Content-type", "text/json")
+            self.end_headers()
+
         elif self.path[-3:] == ".js":
             file_path = JSPath(self.path)
             if os.path.exists(file_path):
@@ -38,8 +47,17 @@ class Handler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     self.wfile.write(f.read())
             else:
                 self.send_response(404)                
+
         else:
+            print "path", self.path
+            print "headeres", self.headers
             self.send_response(404)
+
+
+def HandleSet(ctx, query_string):
+    query = util.ParseURLQuery(query_string)
+    if "tempo" in query:
+        ctx.clock_info.SetTempoBPM(float(query["tempo"]))
 
 def ServerThread(ctx, host='localhost', port=2516):
     global g_ctx

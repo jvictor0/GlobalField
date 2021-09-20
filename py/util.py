@@ -142,9 +142,11 @@ class Const:
 
     def __call__(self, x):
         return self.c
+
+# Replace this with library call if it causes issues.
+#
+def ParseURLQuery(url):
+    return {x[0] : x[1] for x in [x.split("=") for x in url.split("&") ]}
     
 g_utilInitialized = True
 
-
-
-    

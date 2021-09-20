@@ -1,0 +1,25 @@
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
+<script type="text/javascript" src="render_notes.js"></script>
+
+<html>
+  <head>
+    <title>Global Field Controller</title>
+  </head>
+  <p>This is the controller</p>
+  <body>
+    
+    <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
+
+    <p id="forms">
+    <p>
+      <form action="/set" target="dummyframe">
+        <label for="tempo">Tempo:</label><br>
+        <input type="text", id="tempo", name="tempo", value="60"><br>
+        <input type="submit" value="Submit">
+      </form>
+    </p>
+    </p>
+  </body>  
+  
+</html>

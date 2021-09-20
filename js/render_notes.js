@@ -1,12 +1,12 @@
-function renderAllPatterns(eltId, patterns)
+function renderAllPatterns(elt_id, patterns)
 {    
-    document.getElementById(eltId).innerHTML = "";
+    document.getElementById(elt_id).innerHTML = "";
 
     const VF = Vex.Flow;
     
     for (var i = 0; i < patterns.length; i++)
     {
-        var renderer = new VF.Renderer(document.getElementById(eltId),
+        var renderer = new VF.Renderer(document.getElementById(elt_id),
                                        VF.Renderer.Backends.SVG);
         renderer.resize(1000, 150);
 
@@ -90,7 +90,7 @@ function renderBeat(VF, ctx, beat)
     return [notes, ornams];
 }
 
-function renderScalarMetrics(eltId, metrics)
+function renderScalarMetrics(elt_id, metrics)
 {
     var result = "";
     for (let k in metrics)
@@ -98,5 +98,5 @@ function renderScalarMetrics(eltId, metrics)
         result += "<p>" + k + ": " + metrics[k].toString() + "</p>";
     }
 
-    document.getElementById(eltId).innerHTML = result;
+    document.getElementById(elt_id).innerHTML = result;
 }

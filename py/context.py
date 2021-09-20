@@ -8,6 +8,7 @@ import time
 import random
 import position_queue
 import event
+import threading
 
 class PrimeOrdEnergy:
     def __init__(self, prime, base):
@@ -116,17 +117,35 @@ class ClockInfo:
         self.secs_per_beat = secs_per_beat
         self.latency = latency
         self.start_timestamp = time.time()
+        self.lock = threading.Lock()
 
     def StartClock(self):
-        self.start_timestamp = time.time()
+        with self.lock:                    
+            self.start_timestamp = time.time()
         
     def PositionTimestamp(self, pos):
-        return self.start_timestamp + self.latency + self.secs_per_beat * pos.AsDecimal()
+        with self.lock:
+            return self.start_timestamp + self.latency + self.secs_per_beat * pos.AsDecimal()
 
     # WaitForBeat - Sleep til 1 second before the beat_ix, not including latency.
     #
     def WaitForBeat(self, beat):
-        beat_time = self.start_timestamp + self.secs_per_beat * beat
-        sleep_time = max(beat_time - time.time() - 1.0, 0.0)
+        with self.lock:
+            beat_time = self.start_timestamp + self.secs_per_beat * beat
+            sleep_time = max(beat_time - time.time() - 1.0, 0.0)
+            
         time.sleep(sleep_time)
-        
+
+    def SetTempo(self, new_secs_per_beat):
+        with self.lock:
+            new_secs_per_beat = float(new_secs_per_beat)
+            now = time.time()
+            beats_since_start = (now - self.start_timestamp) / self.secs_per_beat
+            self.start_timestamp = now - beats_since_start * new_secs_per_beat
+            self.secs_per_beat = new_secs_per_beat
+
+    def SetTempoBPM(self, new_bpm):
+        self.SetTempo(60.0 / new_bpm)
+            
+    def GetBPM(self):
+        return 60.0 / self.secs_per_beat
